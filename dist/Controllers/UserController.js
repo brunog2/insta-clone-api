@@ -28,49 +28,50 @@ class UserController {
                         error: 'all_fields_required'
                     });
                 }
-                const userValidator = new UserValidator_1.default();
                 const user = new User_1.User();
-                console.log('[USERCONTROLLER] Validating full name');
-                // validating name
-                if (!userValidator.nameValidator(full_name)) {
-                    console.error('[USERCONTROLLER] Error: Invalid name');
+                if (!phone_number && !email) {
+                    console.error('[USERCONTROLLER] Error: Missing email or phone number');
                     return res.status(400).json({
-                        error: 'invalid_name'
+                        error: 'missing_email_or_number'
                     });
                 }
-                console.log('[USERCONTROLLER] Validating email');
-                // validating email
-                if (!userValidator.emailValidator(email)) {
-                    console.error('[USERCONTROLLER] Error: Invalid email');
-                    return res.status(400).json({
-                        error: 'invalid_email!'
-                    });
+                if (!phone_number) {
+                    console.log('[USERCONTROLLER] Validating email');
+                    // validating email
+                    if (!UserValidator_1.default.emailValidator(email)) {
+                        console.error('[USERCONTROLLER] Error: Invalid email');
+                        return res.status(400).json({
+                            error: 'invalid_email!'
+                        });
+                    }
+                    const emailInUse = yield User_1.User.findOne({ email });
+                    if (emailInUse) {
+                        console.error('[USERCONTROLLER] Error: Email already in use');
+                        return res.status(400).json({
+                            error: 'email_already_in_use'
+                        });
+                    }
                 }
-                const emailInUse = yield User_1.User.findOne({ email });
-                if (emailInUse) {
-                    console.error('[USERCONTROLLER] Error: Email already in use');
-                    return res.status(400).json({
-                        error: 'email_already_in_use'
-                    });
-                }
-                console.log('[USERCONTROLLER] Validating phone number');
-                // validating phone number
-                if (!userValidator.phoneValidator(phone_number)) {
-                    console.error('[USERCONTROLLER] Error: Invalid phone number');
-                    return res.status(400).json({
-                        error: 'invalid_phone_number'
-                    });
-                }
-                const phoneInUse = yield User_1.User.findOne({ phone_number });
-                if (phoneInUse) {
-                    console.error('[USERCONTROLLER] Error: Phone number already in use');
-                    return res.status(400).json({
-                        error: 'phone_number_already_in_use'
-                    });
+                if (!email) {
+                    console.log('[USERCONTROLLER] Validating phone number');
+                    // validating phone number
+                    if (!UserValidator_1.default.phoneValidator(phone_number)) {
+                        console.error('[USERCONTROLLER] Error: Invalid phone number');
+                        return res.status(400).json({
+                            error: 'invalid_phone_number'
+                        });
+                    }
+                    const phoneInUse = yield User_1.User.findOne({ phone_number });
+                    if (phoneInUse) {
+                        console.error('[USERCONTROLLER] Error: Phone number already in use');
+                        return res.status(400).json({
+                            error: 'phone_number_already_in_use'
+                        });
+                    }
                 }
                 console.log('[USERCONTROLLER] Validating username');
                 // validating username
-                if (!userValidator.usernameValidator(username)) {
+                if (!UserValidator_1.default.usernameValidator(username)) {
                     console.error('[USERCONTROLLER] Error: Invalid username');
                     return res.status(400).json({
                         error: 'invalid_username'
@@ -83,9 +84,17 @@ class UserController {
                         error: 'username_already_in_use'
                     });
                 }
+                console.log('[USERCONTROLLER] Validating full name');
+                // validating name
+                if (!UserValidator_1.default.nameValidator(full_name)) {
+                    console.error('[USERCONTROLLER] Error: Invalid name');
+                    return res.status(400).json({
+                        error: 'invalid_name'
+                    });
+                }
                 console.log('[USERCONTROLLER] Validating password');
                 // validating password
-                if (!userValidator.passwordValidator(username)) {
+                if (!UserValidator_1.default.passwordValidator(username)) {
                     console.error('[USERCONTROLLER] Error: Invalid password');
                     return res.status(400).json({
                         error: 'invalid_password'
@@ -117,7 +126,50 @@ class UserController {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findByUsername'`);
             try {
                 const { username } = req.body = req.params;
+                if (!UserValidator_1.default.usernameValidator(username)) {
+                    console.error("[USERCONTROLLER] Invalid username");
+                    return res.status(400).send("invalid_username");
+                }
                 const users = yield User_1.User.findOne({ username });
+                console.log("[USERCONTROLLER] Database query successfull");
+                return res.status(200).json({ users });
+            }
+            catch (error) {
+                console.error("[USERCONTROLLER] Failed");
+                res.status(400).send(error);
+            }
+        });
+    }
+    findByEmail(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findByEmail'`);
+            try {
+                const { email } = req.body = req.params;
+                if (!UserValidator_1.default.emailValidator(email)) {
+                    console.error("[USERCONTROLLER] Invalid email");
+                    return res.status(400).send("invalid_email");
+                }
+                const users = yield User_1.User.findOne({ email });
+                console.log("[USERCONTROLLER] Database query successfull");
+                return res.status(200).json({ users });
+            }
+            catch (error) {
+                console.error("[USERCONTROLLER] Failed");
+                res.status(400).send(error);
+            }
+        });
+    }
+    findByPhone(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findByPhone'`);
+            try {
+                const { phone_number } = req.body = req.params;
+                console.log(phone_number);
+                if (!UserValidator_1.default.phoneValidator(phone_number)) {
+                    console.error("[USERCONTROLLER] Invalid phone");
+                    return res.status(400).send("invalid_phone");
+                }
+                const users = yield User_1.User.findOne({ phone_number });
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200).json({ users });
             }

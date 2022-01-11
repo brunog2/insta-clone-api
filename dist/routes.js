@@ -14,6 +14,8 @@ router.get('/', (req, res) => {
 router.get('/users', userController.findAll);
 router.post('/users', userController.store);
 router.get('/users/:username', userController.findByUsername);
+router.get('/users/email/:email', userController.findByEmail);
+router.get('/users/phone/:phone_number', userController.findByPhone);
 router.post('/users/delete', userController.delete);
 router.post('/users/update', userController.update);
 exports.default = router;

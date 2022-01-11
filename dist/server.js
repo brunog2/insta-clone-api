@@ -16,9 +16,13 @@ class Server {
                 }).on('Error', (err) => reject(err));
             });
         };
+        console.log("[SERVER] Initializing Express instance");
         this.app = (0, express_1.default)();
+        console.log("[SERVER] Initializing database connection");
         this.dbConnect();
+        console.log("[SERVER] Initializing middlewares");
         this.middlewares();
+        console.log("[SERVER] Initializing routes");
         this.routes();
     }
     dbConnect() {

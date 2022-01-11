@@ -5,13 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const google_libphonenumber_1 = __importDefault(require("google-libphonenumber"));
 class UserValidator {
-    constructor() {
-        this.nameValidator;
-        this.emailValidator;
-        this.phoneValidator;
-        this.usernameValidator;
-        this.passwordValidator;
-    }
     nameValidator(full_name) {
         if (full_name.replace(/\s/g, "").length > 5) {
             return true;
@@ -29,11 +22,15 @@ class UserValidator {
     }
     phoneValidator(phone_number) {
         const phoneUtil = google_libphonenumber_1.default.PhoneNumberUtil.getInstance();
-        if (phoneUtil.isValidNumber(phoneUtil.parse(phone_number))) {
-            return true;
+        try {
+            if (phoneUtil.isValidNumber(phoneUtil.parse(phone_number))) {
+                return true;
+            }
+            else
+                return false;
         }
-        else
-            return false;
+        catch (err) {
+        }
     }
     usernameValidator(username) {
         if (username)
@@ -48,4 +45,4 @@ class UserValidator {
             return false;
     }
 }
-exports.default = UserValidator;
+exports.default = new UserValidator();

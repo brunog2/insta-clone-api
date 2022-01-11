@@ -7,9 +7,13 @@ class Server {
     public app: express.Application;
 
     constructor() {
+        console.log("[SERVER] Initializing Express instance");
         this.app = express();
+        console.log("[SERVER] Initializing database connection");
         this.dbConnect();
+        console.log("[SERVER] Initializing middlewares");
         this.middlewares();
+        console.log("[SERVER] Initializing routes");
         this.routes();
     }
 

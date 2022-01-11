@@ -1,13 +1,6 @@
 import libphonenumber from 'google-libphonenumber';
 
 class UserValidator {
-    constructor() {
-        this.nameValidator;
-        this.emailValidator;
-        this.phoneValidator;
-        this.usernameValidator;
-        this.passwordValidator;
-    }
 
     public nameValidator(full_name: string) {
         if (full_name.replace(/\s/g, "").length > 5) {
@@ -24,9 +17,12 @@ class UserValidator {
 
     public phoneValidator(phone_number: string) {
         const phoneUtil = libphonenumber.PhoneNumberUtil.getInstance();
-        if (phoneUtil.isValidNumber(phoneUtil.parse(phone_number))) {
-            return true;
-        } else return false;
+        try {
+            if (phoneUtil.isValidNumber(phoneUtil.parse(phone_number))) {
+                return true;
+            } else return false;
+        } catch(err) {
+        }
     }
 
     public usernameValidator(username: string) {
@@ -40,4 +36,4 @@ class UserValidator {
     }
 }
 
-export default UserValidator;
+export default new UserValidator();

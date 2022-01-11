@@ -22,11 +22,11 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "full_name", void 0);
 __decorate([
-    (0, typeorm_1.Column)("varchar", { length: 100 }),
+    (0, typeorm_1.Column)("varchar", { length: 100, nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "email", void 0);
 __decorate([
-    (0, typeorm_1.Column)("varchar", { length: 15 }),
+    (0, typeorm_1.Column)("varchar", { length: 15, nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "phone_number", void 0);
 __decorate([
@@ -38,6 +38,7 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "password", void 0);
 User = __decorate([
-    (0, typeorm_1.Entity)()
+    (0, typeorm_1.Entity)(),
+    (0, typeorm_1.Check)(`("email" IS NULL AND "phone_number" IS NOT NULL) OR ("phone_number" IS NULL AND "email" IS NOT NULL)`)
 ], User);
 exports.User = User;
