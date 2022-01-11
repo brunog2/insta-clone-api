@@ -2,12 +2,98 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import { User } from '../entity/User';
 import UserValidator from '../util/validators/UserValidator';
+import { sign, verify, VerifyErrors, JwtPayload } from 'jsonwebtoken';
+import { config } from "dotenv-safe"
 
 type userColumn = {
     [key: string]: 'full_name' | 'email' | 'phone_number' | 'username' | 'password'
 }
 
+interface IUser {
+    id: number,
+    full_name: string,
+    email: string | null,
+    phone_number: string | null,
+    username: string,
+    password: string
+}
+
 class UserController {
+    public async posts(req: express.Request, res: express.Response) {
+        console.log(`[USERCONTROLLER] Attemping to ${req.method} 'posts'`);
+        try {
+            const { token } = req.body;
+
+            if (!token) return res.status(401).json({ auth: false, message: 'No token provided.' });
+
+            verify(token, String(process.env.SECRET), function (err: VerifyErrors | null, decoded: JwtPayload | undefined) {
+                if (err) return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
+
+                // se tudo estiver ok, salva no request para uso posterior
+                req.body.id = decoded?.id;
+                console.log(`[USERCONTROLLER] User '${req.body.id}' authenticated`);
+                return res.status(400).send("you are authenticated :)")
+            });
+
+
+        } catch (error) {
+            console.error("[USERCONTROLLER] Failed");
+            res.status(400).send(error);
+        }
+    }
+
+    public async login(req: express.Request, res: express.Response) {
+        console.log(`[USERCONTROLLER] Attemping to ${req.method} 'login'`);
+        try {
+            const { email, phone_number, username, password } = req.body;
+
+            let user: IUser | undefined;
+
+            const badField = () => {
+                console.error("[USERCONTROLLER] User not found");
+                return res.status(400).send("user_not_found")
+            }
+
+            email ? user = await User.findOne({ username }) :
+                phone_number ? user = await User.findOne({ phone_number }) :
+                    username ? user = await User.findOne({ username }) :
+                        badField;
+
+            console.log(email, username, phone_number, password)
+
+            console.log("[USERCONTROLLER] Database query successfull");
+
+            if (user) {
+                bcrypt.compare(password, user["password"], (err, result) => {
+                    if (result && user) {
+                        console.log("[USERCONTROLLER] Creating token");
+                        const token = sign({ id: user["id"] }, String(process.env.SECRET), {
+                            expiresIn: 30 // expires in 30s
+                        });
+                        return res.json({ auth: true, token: token });
+                    }
+                    else return res.status(500).send("user_not_authenticated");
+                })
+            }
+
+
+        } catch (error) {
+            console.error("[USERCONTROLLER] Failed");
+            res.status(400).send(error);
+        }
+    }
+
+    public async logout(req: express.Request, res: express.Response) {
+        console.log(`[USERCONTROLLER] Attemping to ${req.method} 'logout'`);
+        try {
+            console.log("[USERCONTROLLER] Removing token");
+            return res.json({ auth: false, token: null });
+        } catch (error) {
+            console.error("[USERCONTROLLER] Failed");
+            res.status(400).send(error);
+        }
+    }
+
     public async store(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'store'`);
         try {
@@ -166,7 +252,7 @@ class UserController {
         try {
             const { phone_number } = req.body = req.params;
             console.log(phone_number);
-            
+
             if (!UserValidator.phoneValidator(phone_number)) {
                 console.error("[USERCONTROLLER] Invalid phone");
                 return res.status(400).send("invalid_phone");

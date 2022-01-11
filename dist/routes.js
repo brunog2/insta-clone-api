@@ -11,6 +11,8 @@ router.get('/', (req, res) => {
     console.log(`[ROUTES] receiving type GET request to '/'`);
     return res.send('You got it!');
 });
+router.post('/login', userController.login);
+router.post('/posts', userController.posts);
 router.get('/users', userController.findAll);
 router.post('/users', userController.store);
 router.get('/users/:username', userController.findByUsername);

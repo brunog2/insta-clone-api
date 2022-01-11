@@ -15,7 +15,79 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const User_1 = require("../entity/User");
 const UserValidator_1 = __importDefault(require("../util/validators/UserValidator"));
+const jsonwebtoken_1 = require("jsonwebtoken");
 class UserController {
+    posts(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`[USERCONTROLLER] Attemping to ${req.method} 'posts'`);
+            try {
+                const { token } = req.body;
+                if (!token)
+                    return res.status(401).json({ auth: false, message: 'No token provided.' });
+                (0, jsonwebtoken_1.verify)(token, String(process.env.SECRET), function (err, decoded) {
+                    if (err)
+                        return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
+                    // se tudo estiver ok, salva no request para uso posterior
+                    req.body.id = decoded === null || decoded === void 0 ? void 0 : decoded.id;
+                    console.log(`[USERCONTROLLER] User '${req.body.id}' authenticated`);
+                    return res.status(400).send("you are authenticated :)");
+                });
+            }
+            catch (error) {
+                console.error("[USERCONTROLLER] Failed");
+                res.status(400).send(error);
+            }
+        });
+    }
+    login(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`[USERCONTROLLER] Attemping to ${req.method} 'login'`);
+            try {
+                const { email, phone_number, username, password } = req.body;
+                let user;
+                const badField = () => {
+                    console.error("[USERCONTROLLER] User not found");
+                    return res.status(400).send("user_not_found");
+                };
+                email ? user = yield User_1.User.findOne({ username }) :
+                    phone_number ? user = yield User_1.User.findOne({ phone_number }) :
+                        username ? user = yield User_1.User.findOne({ username }) :
+                            badField;
+                console.log(email, username, phone_number, password);
+                console.log("[USERCONTROLLER] Database query successfull");
+                if (user) {
+                    bcrypt_1.default.compare(password, user["password"], (err, result) => {
+                        if (result && user) {
+                            console.log("[USERCONTROLLER] Creating token");
+                            const token = (0, jsonwebtoken_1.sign)({ id: user["id"] }, String(process.env.SECRET), {
+                                expiresIn: 30 // expires in 5min
+                            });
+                            return res.json({ auth: true, token: token });
+                        }
+                        else
+                            return res.status(500).send("user_not_authenticated");
+                    });
+                }
+            }
+            catch (error) {
+                console.error("[USERCONTROLLER] Failed");
+                res.status(400).send(error);
+            }
+        });
+    }
+    logout(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(`[USERCONTROLLER] Attemping to ${req.method} 'logout'`);
+            try {
+                console.log("[USERCONTROLLER] Removing token");
+                return res.json({ auth: false, token: null });
+            }
+            catch (error) {
+                console.error("[USERCONTROLLER] Failed");
+                res.status(400).send(error);
+            }
+        });
+    }
     store(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'store'`);
