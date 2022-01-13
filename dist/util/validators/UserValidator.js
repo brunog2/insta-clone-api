@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const google_libphonenumber_1 = __importDefault(require("google-libphonenumber"));
+const jsonwebtoken_1 = require("jsonwebtoken");
 class UserValidator {
     nameValidator(full_name) {
         if (full_name.replace(/\s/g, "").length > 5) {
@@ -43,6 +44,15 @@ class UserValidator {
             return true;
         else
             return false;
+    }
+    verifyToken(token) {
+        let r;
+        (0, jsonwebtoken_1.verify)(token, String(process.env.ACCESSTOKENSECRET), function (err, decoded) {
+            if (err)
+                return r = false;
+            return r = true;
+        });
+        return r;
     }
 }
 exports.default = new UserValidator();

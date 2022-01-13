@@ -1,9 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
+import { sign, decode } from 'jsonwebtoken';
 import { User } from '../entity/User';
 import UserValidator from '../util/validators/UserValidator';
-import { sign, verify, VerifyErrors, JwtPayload } from 'jsonwebtoken';
-import { config } from "dotenv-safe"
 
 type userColumn = {
     [key: string]: 'full_name' | 'email' | 'phone_number' | 'username' | 'password'
@@ -22,20 +21,31 @@ class UserController {
     public async posts(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'posts'`);
         try {
-            const { token } = req.body;
+            let { token } = req.cookies;
+
+            console.log(`[USERCONTROLLER] User coookies`, req.cookies);
 
             if (!token) return res.status(401).json({ auth: false, message: 'No token provided.' });
 
-            verify(token, String(process.env.SECRET), function (err: VerifyErrors | null, decoded: JwtPayload | undefined) {
-                if (err) return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
+            else if (!UserValidator.verifyToken(token)) {
+                return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
+            }
 
-                // se tudo estiver ok, salva no request para uso posterior
-                req.body.id = decoded?.id;
-                console.log(`[USERCONTROLLER] User '${req.body.id}' authenticated`);
-                return res.status(400).send("you are authenticated :)")
-            });
+            const decodedToken = decode(token) as { id: number };
+            const id = decodedToken.id;
 
+            console.log(`[USERCONTROLLER] User '${id}' authenticated`);
 
+            const user = await User.findOne({id});
+            console.log(user);
+
+            // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
+            console.log("[USERCONTROLLER] Creating new token");
+
+            token = sign({ id: id }, String(process.env.ACCESSTOKENSECRET), { expiresIn: 60 });
+
+            // armazenar o hash do token no browser como um HttpOnly cookie
+            return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user }).status(200);
         } catch (error) {
             console.error("[USERCONTROLLER] Failed");
             res.status(400).send(error);
@@ -51,30 +61,37 @@ class UserController {
 
             const badField = () => {
                 console.error("[USERCONTROLLER] User not found");
-                return res.status(400).send("user_not_found")
+                return res.json({ error: "user_not_found" })
             }
 
-            email ? user = await User.findOne({ username }) :
+            if (!password) {
+                console.error("[USERCONTROLLER] No password provided");
+                return res.json({ error: "password_required" })
+            }
+
+            email ? user = await User.findOne({ email }) :
                 phone_number ? user = await User.findOne({ phone_number }) :
                     username ? user = await User.findOne({ username }) :
-                        badField;
-
-            console.log(email, username, phone_number, password)
+                        badField();
 
             console.log("[USERCONTROLLER] Database query successfull");
+
+            console.log(user);
 
             if (user) {
                 bcrypt.compare(password, user["password"], (err, result) => {
                     if (result && user) {
                         console.log("[USERCONTROLLER] Creating token");
-                        const token = sign({ id: user["id"] }, String(process.env.SECRET), {
-                            expiresIn: 30 // expires in 30s
+                        const token = sign({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                            expiresIn: 60 //s 
                         });
-                        return res.json({ auth: true, token: token });
+
+                        // armazenar o hash do token no browser como um HttpOnly cookie
+                        return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user: user}).status(200);
                     }
-                    else return res.status(500).send("user_not_authenticated");
+                    else return res.json({ error: "invalid_credentials" });
                 })
-            }
+            } else badField();
 
 
         } catch (error) {
@@ -86,8 +103,8 @@ class UserController {
     public async logout(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'logout'`);
         try {
-            console.log("[USERCONTROLLER] Removing token");
-            return res.json({ auth: false, token: null });
+            console.log("[USERCONTROLLER] Removing token from cookie");            
+            return res.cookie('token', null, { httpOnly: true }).json({ message: "User logouted" }).status(200);
         } catch (error) {
             console.error("[USERCONTROLLER] Failed");
             res.status(400).send(error);
@@ -179,7 +196,7 @@ class UserController {
 
             console.log('[USERCONTROLLER] Validating password');
             // validating password
-            if (!UserValidator.passwordValidator(username)) {
+            if (!UserValidator.passwordValidator(password)) {
                 console.error('[USERCONTROLLER] Error: Invalid password');
                 return res.status(400).json({
                     error: 'invalid_password'
@@ -199,7 +216,14 @@ class UserController {
                 user.password = password;
                 await user.save();
                 console.log("[USERCONTROLLER] Database query successfull");
-                return res.status(200).json({ user });
+
+                console.log("[USERCONTROLLER] Creating token");
+                const token = sign({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                    expiresIn: 10 //s 
+                });
+
+                // armazenar o token no browser como um HttpOnly cookie
+                return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token }).status(200);
             });
         } catch (error) {
             console.error("[USERCONTROLLER] Failed");

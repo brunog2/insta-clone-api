@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dbconnect_1 = __importDefault(require("./dbconfig/dbconnect"));
 const routes_1 = __importDefault(require("./routes"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
 class Server {
     constructor() {
         this.start = (port) => {
@@ -30,7 +31,8 @@ class Server {
     }
     middlewares() {
         this.app.use(express_1.default.json());
-        this.app.use((0, cors_1.default)());
+        this.app.use((0, cors_1.default)({ credentials: true, origin: ["http://localhost:3000", "http://10.0.0.100:3000"] }));
+        this.app.use((0, cookie_parser_1.default)());
     }
     routes() {
         this.app.use(routes_1.default);

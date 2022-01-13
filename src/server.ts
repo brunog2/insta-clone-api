@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dbconnect from './dbconfig/dbconnect';
 import routes from './routes';
+import cookieParser from "cookie-parser";
 
 class Server {
     public app: express.Application;
@@ -23,7 +24,8 @@ class Server {
 
     private middlewares() {
         this.app.use(express.json());
-        this.app.use(cors());
+        this.app.use(cors({credentials: true, origin: ["http://localhost:3000", "http://10.0.0.100:3000"] }));
+        this.app.use(cookieParser());
     }
 
     private routes() {

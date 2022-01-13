@@ -12,6 +12,7 @@ router.get('/', (req, res) => {
     return res.send('You got it!');
 });
 router.post('/login', userController.login);
+router.post('/logout', userController.logout);
 router.post('/posts', userController.posts);
 router.get('/users', userController.findAll);
 router.post('/users', userController.store);

@@ -1,4 +1,5 @@
 import libphonenumber from 'google-libphonenumber';
+import { verify, VerifyErrors, JwtPayload } from 'jsonwebtoken';
 
 class UserValidator {
 
@@ -21,7 +22,7 @@ class UserValidator {
             if (phoneUtil.isValidNumber(phoneUtil.parse(phone_number))) {
                 return true;
             } else return false;
-        } catch(err) {
+        } catch (err) {
         }
     }
 
@@ -33,6 +34,15 @@ class UserValidator {
     public passwordValidator(password: string) {
         if (password.length > 5) return true;
         else return false;
+    }
+
+    public verifyToken(token: string) {
+        let r;
+        verify(token, String(process.env.ACCESSTOKENSECRET), function (err: VerifyErrors | null, decoded: JwtPayload | undefined) {
+            if (err) return r = false;
+            return r = true;
+        });
+        return r;
     }
 }
 

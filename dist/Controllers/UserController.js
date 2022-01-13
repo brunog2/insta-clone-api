@@ -13,25 +13,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = require("jsonwebtoken");
 const User_1 = require("../entity/User");
 const UserValidator_1 = __importDefault(require("../util/validators/UserValidator"));
-const jsonwebtoken_1 = require("jsonwebtoken");
 class UserController {
     posts(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'posts'`);
             try {
-                const { token } = req.body;
+                let { token } = req.cookies;
+                console.log(`[USERCONTROLLER] User coookies`, req.cookies);
                 if (!token)
                     return res.status(401).json({ auth: false, message: 'No token provided.' });
-                (0, jsonwebtoken_1.verify)(token, String(process.env.SECRET), function (err, decoded) {
-                    if (err)
-                        return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
-                    // se tudo estiver ok, salva no request para uso posterior
-                    req.body.id = decoded === null || decoded === void 0 ? void 0 : decoded.id;
-                    console.log(`[USERCONTROLLER] User '${req.body.id}' authenticated`);
-                    return res.status(400).send("you are authenticated :)");
-                });
+                else if (!UserValidator_1.default.verifyToken(token)) {
+                    return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
+                }
+                const decodedToken = (0, jsonwebtoken_1.decode)(token);
+                const id = decodedToken.id;
+                console.log(`[USERCONTROLLER] User '${id}' authenticated`);
+                const user = yield User_1.User.findOne({ id });
+                console.log(user);
+                // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
+                console.log("[USERCONTROLLER] Creating new token");
+                token = (0, jsonwebtoken_1.sign)({ id: id }, String(process.env.ACCESSTOKENSECRET), { expiresIn: 60 });
+                // armazenar o hash do token no browser como um HttpOnly cookie
+                return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user }).status(200);
             }
             catch (error) {
                 console.error("[USERCONTROLLER] Failed");
@@ -47,27 +53,34 @@ class UserController {
                 let user;
                 const badField = () => {
                     console.error("[USERCONTROLLER] User not found");
-                    return res.status(400).send("user_not_found");
+                    return res.json({ error: "user_not_found" });
                 };
-                email ? user = yield User_1.User.findOne({ username }) :
+                if (!password) {
+                    console.error("[USERCONTROLLER] No password provided");
+                    return res.json({ error: "password_required" });
+                }
+                email ? user = yield User_1.User.findOne({ email }) :
                     phone_number ? user = yield User_1.User.findOne({ phone_number }) :
                         username ? user = yield User_1.User.findOne({ username }) :
-                            badField;
-                console.log(email, username, phone_number, password);
+                            badField();
                 console.log("[USERCONTROLLER] Database query successfull");
+                console.log(user);
                 if (user) {
                     bcrypt_1.default.compare(password, user["password"], (err, result) => {
                         if (result && user) {
                             console.log("[USERCONTROLLER] Creating token");
-                            const token = (0, jsonwebtoken_1.sign)({ id: user["id"] }, String(process.env.SECRET), {
-                                expiresIn: 30 // expires in 5min
+                            const token = (0, jsonwebtoken_1.sign)({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                                expiresIn: 60 //s 
                             });
-                            return res.json({ auth: true, token: token });
+                            // armazenar o hash do token no browser como um HttpOnly cookie
+                            return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user: user }).status(200);
                         }
                         else
-                            return res.status(500).send("user_not_authenticated");
+                            return res.json({ error: "invalid_credentials" });
                     });
                 }
+                else
+                    badField();
             }
             catch (error) {
                 console.error("[USERCONTROLLER] Failed");
@@ -79,8 +92,8 @@ class UserController {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'logout'`);
             try {
-                console.log("[USERCONTROLLER] Removing token");
-                return res.json({ auth: false, token: null });
+                console.log("[USERCONTROLLER] Removing token from cookie");
+                return res.cookie('token', null, { httpOnly: true }).json({ message: "User logouted" }).status(200);
             }
             catch (error) {
                 console.error("[USERCONTROLLER] Failed");
@@ -166,7 +179,7 @@ class UserController {
                 }
                 console.log('[USERCONTROLLER] Validating password');
                 // validating password
-                if (!UserValidator_1.default.passwordValidator(username)) {
+                if (!UserValidator_1.default.passwordValidator(password)) {
                     console.error('[USERCONTROLLER] Error: Invalid password');
                     return res.status(400).json({
                         error: 'invalid_password'
@@ -184,7 +197,12 @@ class UserController {
                     user.password = password;
                     yield user.save();
                     console.log("[USERCONTROLLER] Database query successfull");
-                    return res.status(200).json({ user });
+                    console.log("[USERCONTROLLER] Creating token");
+                    const token = (0, jsonwebtoken_1.sign)({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                        expiresIn: 10 //s 
+                    });
+                    // armazenar o token no browser como um HttpOnly cookie
+                    return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token }).status(200);
                 }));
             }
             catch (error) {
