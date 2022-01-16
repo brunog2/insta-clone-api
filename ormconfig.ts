@@ -1,4 +1,4 @@
-{
+export default {
     "type": "postgres",
     "host": "localhost",
     "port": 5432,
@@ -7,7 +7,5 @@
     "database": "instagram",
     "synchronize": true,
     "logging": false,
-    "entities": [
-       "src/entity/**/*.ts"
-    ]
+    "entities": [__dirname + '/../**/*.entity.js']
  }

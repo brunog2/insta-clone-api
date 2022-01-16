@@ -21,25 +21,6 @@ class UserController {
     public async posts(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'posts'`);
         try {
-            let { username } = req.params;
-
-            const user = await User.findOne({
-                relations: ['posts'],
-                where: { username }
-            });
-
-            const posts = user?.posts;
-
-            return res.json({posts}).status(200);
-        } catch (error) {
-            console.error("[USERCONTROLLER] Failed");
-            res.status(400).send(error);
-        }
-    }
-
-    public async feed(req: express.Request, res: express.Response) {
-        console.log(`[USERCONTROLLER] Attemping to ${req.method} 'feed'`);
-        try {
             let { token } = req.cookies;
 
             console.log(`[USERCONTROLLER] User coookies`, req.cookies);
@@ -55,7 +36,7 @@ class UserController {
 
             console.log(`[USERCONTROLLER] User '${id}' authenticated`);
 
-            const user = await User.findOne({ id });
+            const user = await User.findOne({id});
             console.log(user);
 
             // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
@@ -106,7 +87,7 @@ class UserController {
                         });
 
                         // armazenar o hash do token no browser como um HttpOnly cookie
-                        return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user: user }).status(200);
+                        return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user: user}).status(200);
                     }
                     else return res.json({ error: "invalid_credentials" });
                 })
@@ -122,7 +103,7 @@ class UserController {
     public async logout(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'logout'`);
         try {
-            console.log("[USERCONTROLLER] Removing token from cookie");
+            console.log("[USERCONTROLLER] Removing token from cookie");            
             return res.cookie('token', null, { httpOnly: true }).json({ message: "User logouted" }).status(200);
         } catch (error) {
             console.error("[USERCONTROLLER] Failed");
@@ -253,7 +234,7 @@ class UserController {
     public async findByUsername(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findByUsername'`);
         try {
-            const { username } = req.params;
+            const { username } = req.body = req.params;
 
             if (!UserValidator.usernameValidator(username)) {
                 console.error("[USERCONTROLLER] Invalid username");
@@ -273,7 +254,7 @@ class UserController {
     public async findByEmail(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findByEmail'`);
         try {
-            const { email } = req.params;
+            const { email } = req.body = req.params;
 
             if (!UserValidator.emailValidator(email)) {
                 console.error("[USERCONTROLLER] Invalid email");
@@ -293,7 +274,7 @@ class UserController {
     public async findByPhone(req: express.Request, res: express.Response) {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findByPhone'`);
         try {
-            const { phone_number } = req.params;
+            const { phone_number } = req.body = req.params;
             console.log(phone_number);
 
             if (!UserValidator.phoneValidator(phone_number)) {

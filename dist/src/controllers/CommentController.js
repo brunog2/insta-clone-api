@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = require("jsonwebtoken");
-const User_1 = require("../entity/User");
+const User_entity_1 = require("../entities/User.entity");
 const UserValidator_1 = __importDefault(require("../util/validators/UserValidator"));
 class UserController {
     posts(req, res) {
@@ -31,7 +31,7 @@ class UserController {
                 const decodedToken = (0, jsonwebtoken_1.decode)(token);
                 const id = decodedToken.id;
                 console.log(`[USERCONTROLLER] User '${id}' authenticated`);
-                const user = yield User_1.User.findOne({ id });
+                const user = yield User_entity_1.User.findOne({ id });
                 console.log(user);
                 // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
                 console.log("[USERCONTROLLER] Creating new token");
@@ -59,9 +59,9 @@ class UserController {
                     console.error("[USERCONTROLLER] No password provided");
                     return res.json({ error: "password_required" });
                 }
-                email ? user = yield User_1.User.findOne({ email }) :
-                    phone_number ? user = yield User_1.User.findOne({ phone_number }) :
-                        username ? user = yield User_1.User.findOne({ username }) :
+                email ? user = yield User_entity_1.User.findOne({ email }) :
+                    phone_number ? user = yield User_entity_1.User.findOne({ phone_number }) :
+                        username ? user = yield User_entity_1.User.findOne({ username }) :
                             badField();
                 console.log("[USERCONTROLLER] Database query successfull");
                 console.log(user);
@@ -113,7 +113,7 @@ class UserController {
                         error: 'all_fields_required'
                     });
                 }
-                const user = new User_1.User();
+                const user = new User_entity_1.User();
                 if (!phone_number && !email) {
                     console.error('[USERCONTROLLER] Error: Missing email or phone number');
                     return res.status(400).json({
@@ -129,7 +129,7 @@ class UserController {
                             error: 'invalid_email!'
                         });
                     }
-                    const emailInUse = yield User_1.User.findOne({ email });
+                    const emailInUse = yield User_entity_1.User.findOne({ email });
                     if (emailInUse) {
                         console.error('[USERCONTROLLER] Error: Email already in use');
                         return res.status(400).json({
@@ -146,7 +146,7 @@ class UserController {
                             error: 'invalid_phone_number'
                         });
                     }
-                    const phoneInUse = yield User_1.User.findOne({ phone_number });
+                    const phoneInUse = yield User_entity_1.User.findOne({ phone_number });
                     if (phoneInUse) {
                         console.error('[USERCONTROLLER] Error: Phone number already in use');
                         return res.status(400).json({
@@ -162,7 +162,7 @@ class UserController {
                         error: 'invalid_username'
                     });
                 }
-                const usernameInUse = yield User_1.User.findOne({ username });
+                const usernameInUse = yield User_entity_1.User.findOne({ username });
                 if (usernameInUse) {
                     console.error('[USERCONTROLLER] Error: Username already in use');
                     return res.status(400).json({
@@ -220,7 +220,7 @@ class UserController {
                     console.error("[USERCONTROLLER] Invalid username");
                     return res.status(400).send("invalid_username");
                 }
-                const users = yield User_1.User.findOne({ username });
+                const users = yield User_entity_1.User.findOne({ username });
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200).json({ users });
             }
@@ -239,7 +239,7 @@ class UserController {
                     console.error("[USERCONTROLLER] Invalid email");
                     return res.status(400).send("invalid_email");
                 }
-                const users = yield User_1.User.findOne({ email });
+                const users = yield User_entity_1.User.findOne({ email });
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200).json({ users });
             }
@@ -259,7 +259,7 @@ class UserController {
                     console.error("[USERCONTROLLER] Invalid phone");
                     return res.status(400).send("invalid_phone");
                 }
-                const users = yield User_1.User.findOne({ phone_number });
+                const users = yield User_entity_1.User.findOne({ phone_number });
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200).json({ users });
             }
@@ -273,7 +273,7 @@ class UserController {
         return __awaiter(this, void 0, void 0, function* () {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'findAll'`);
             try {
-                const users = yield User_1.User.find();
+                const users = yield User_entity_1.User.find();
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200).json({ users });
             }
@@ -289,7 +289,7 @@ class UserController {
             try {
                 const { username, newValue } = req.body;
                 const { column } = req.body;
-                let user = yield User_1.User.findOne({ username });
+                let user = yield User_entity_1.User.findOne({ username });
                 console.log("[USERCONTROLLER] Database query successfull");
                 if (!user) {
                     console.error("[USERCONTROLLER] User doesn't exist");
@@ -297,7 +297,7 @@ class UserController {
                 }
                 // updating data on user object
                 user[column] = newValue;
-                yield User_1.User.save(user);
+                yield User_entity_1.User.save(user);
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200).json({ user });
             }
@@ -312,13 +312,13 @@ class UserController {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'delete'`);
             try {
                 const { username } = req.body;
-                const user = yield User_1.User.find({ username });
+                const user = yield User_entity_1.User.find({ username });
                 console.log("[USERCONTROLLER] Database query successfull");
                 if (!user) {
                     console.error("[USERCONTROLLER] User doesn't exist");
                     return res.status(400).json({ error: "user_does_not_exist" });
                 }
-                yield User_1.User.remove(user);
+                yield User_entity_1.User.remove(user);
                 console.log("[USERCONTROLLER] Database query successfull");
                 return res.status(200);
             }

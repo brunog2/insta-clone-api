@@ -31,7 +31,7 @@ class Server {
     }
     middlewares() {
         this.app.use(express_1.default.json());
-        this.app.use((0, cors_1.default)({ credentials: true, origin: ["http://localhost:3000", "http://10.0.0.100:3000"] }));
+        this.app.use((0, cors_1.default)({ credentials: true, origin: ["http://localhost:3000", "http://10.0.0.105:3000", "localhost:3333"] }));
         this.app.use((0, cookie_parser_1.default)());
     }
     routes() {

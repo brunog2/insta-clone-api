@@ -2,7 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const typeorm_1 = require("typeorm");
-const User_1 = require("../entity/User");
+const User_entity_1 = require("../entities/User.entity");
+const Post_entity_1 = require("../entities/Post.entity");
+const Comment_entity_1 = require("../entities/Comment.entity");
+const Like_entity_1 = require("../entities/Like.entity");
 exports.default = (0, typeorm_1.createConnection)({
     type: "postgres",
     host: "localhost",
@@ -11,7 +14,7 @@ exports.default = (0, typeorm_1.createConnection)({
     password: "admin",
     database: "instagram",
     entities: [
-        User_1.User
+        User_entity_1.User, Post_entity_1.Post, Comment_entity_1.Comment, Like_entity_1.Like
     ],
     synchronize: true,
     logging: false

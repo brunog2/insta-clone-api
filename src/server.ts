@@ -24,7 +24,7 @@ class Server {
 
     private middlewares() {
         this.app.use(express.json());
-        this.app.use(cors({credentials: true, origin: ["http://localhost:3000", "http://10.0.0.100:3000"] }));
+        this.app.use(cors({credentials: true, origin: ["http://localhost:3000", "http://10.0.0.105:3000", "localhost:3333"] }));
         this.app.use(cookieParser());
     }
 

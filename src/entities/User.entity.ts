@@ -1,4 +1,5 @@
-import { BaseEntity, PrimaryGeneratedColumn, Column, Entity, Check } from 'typeorm';
+import { BaseEntity, PrimaryGeneratedColumn, Column, Entity, JoinColumn, Check, OneToMany } from 'typeorm';
+import { Post } from './Post.entity';
 
 @Entity()
 @Check(`("email" IS NULL AND "phone_number" IS NOT NULL) OR ("phone_number" IS NULL AND "email" IS NOT NULL)`)
@@ -21,4 +22,9 @@ export class User extends BaseEntity {
 
     @Column("varchar", { length: 60 })
     password: string;
+
+    @OneToMany(() => Post, post => post.user)
+    @JoinColumn()
+    posts: Post[]
+    
 }

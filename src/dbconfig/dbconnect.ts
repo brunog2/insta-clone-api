@@ -1,6 +1,9 @@
 import 'reflect-metadata';
 import { createConnection } from 'typeorm';
-import { User } from '../entity/User';
+import { User } from '../entities/User.entity';
+import { Post } from '../entities/Post.entity';
+import { Comment } from '../entities/Comment.entity';
+import { Like } from '../entities/Like.entity';
 
 export default createConnection({
     type: "postgres",
@@ -10,7 +13,7 @@ export default createConnection({
     password: "admin",
     database: "instagram",
     entities: [
-        User
+        User, Post, Comment, Like
     ],
     synchronize: true,
     logging: false

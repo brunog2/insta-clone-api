@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.User = void 0;
 const typeorm_1 = require("typeorm");
+const Post_entity_1 = require("./Post.entity");
 let User = class User extends typeorm_1.BaseEntity {
 };
 __decorate([
@@ -37,6 +38,11 @@ __decorate([
     (0, typeorm_1.Column)("varchar", { length: 60 }),
     __metadata("design:type", String)
 ], User.prototype, "password", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Post_entity_1.Post, post => post.user),
+    (0, typeorm_1.JoinColumn)(),
+    __metadata("design:type", Array)
+], User.prototype, "posts", void 0);
 User = __decorate([
     (0, typeorm_1.Entity)(),
     (0, typeorm_1.Check)(`("email" IS NULL AND "phone_number" IS NOT NULL) OR ("phone_number" IS NULL AND "email" IS NOT NULL)`)
