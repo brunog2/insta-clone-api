@@ -16,6 +16,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = require("jsonwebtoken");
 const User_entity_1 = require("../entities/User.entity");
 const UserValidator_1 = __importDefault(require("../util/validators/UserValidator"));
+const auth_1 = __importDefault(require("../services/auth"));
 class UserController {
     posts(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -40,22 +41,11 @@ class UserController {
             console.log(`[USERCONTROLLER] Attemping to ${req.method} 'feed'`);
             try {
                 let { token } = req.cookies;
+                const { id } = req.body;
                 console.log(`[USERCONTROLLER] User coookies`, req.cookies);
-                if (!token)
-                    return res.status(401).json({ auth: false, message: 'No token provided.' });
-                else if (!UserValidator_1.default.verifyToken(token)) {
-                    return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
-                }
-                const decodedToken = (0, jsonwebtoken_1.decode)(token);
-                const id = decodedToken.id;
-                console.log(`[USERCONTROLLER] User '${id}' authenticated`);
-                const user = yield User_entity_1.User.findOne({ id });
-                console.log(user);
-                // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
-                console.log("[USERCONTROLLER] Creating new token");
-                token = (0, jsonwebtoken_1.sign)({ id: id }, String(process.env.ACCESSTOKENSECRET), { expiresIn: 60 });
-                // armazenar o hash do token no browser como um HttpOnly cookie
-                return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user }).status(200);
+                const validToken = yield (0, auth_1.default)(token);
+                console.log(validToken);
+                return res.json(validToken);
             }
             catch (error) {
                 console.error("[USERCONTROLLER] Failed");
@@ -87,11 +77,12 @@ class UserController {
                     bcrypt_1.default.compare(password, user["password"], (err, result) => {
                         if (result && user) {
                             console.log("[USERCONTROLLER] Creating token");
-                            const token = (0, jsonwebtoken_1.sign)({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                            let hashId = bcrypt_1.default.hashSync(user["id"].toString(), 10);
+                            const token = (0, jsonwebtoken_1.sign)({ id: hashId }, String(process.env.ACCESSTOKENSECRET), {
                                 expiresIn: 60 //s 
                             });
                             // armazenar o hash do token no browser como um HttpOnly cookie
-                            return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user: user }).status(200);
+                            return res.cookie('token', token, { httpOnly: true }).json({ auth: true, user_id: hashId }).status(200);
                         }
                         else
                             return res.json({ error: "invalid_credentials" });
@@ -215,8 +206,12 @@ class UserController {
                     user.password = password;
                     yield user.save();
                     console.log("[USERCONTROLLER] Database query successfull");
+                    let hashId;
+                    bcrypt_1.default.hash(user["id"].toString(), 10, (err, hash) => {
+                        hashId = hash;
+                    });
                     console.log("[USERCONTROLLER] Creating token");
-                    const token = (0, jsonwebtoken_1.sign)({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                    const token = (0, jsonwebtoken_1.sign)({ id: hashId }, String(process.env.ACCESSTOKENSECRET), {
                         expiresIn: 10 //s 
                     });
                     // armazenar o token no browser como um HttpOnly cookie

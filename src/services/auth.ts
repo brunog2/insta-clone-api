@@ -1,49 +1,35 @@
-import { User } from "../entities/User.entity";
-import bcrypt from 'bcrypt';
+import { sign, decode } from 'jsonwebtoken';
+import UserValidator from '../util/validators/UserValidator';
 
-interface IUser {
-    id: number,
-    full_name: string,
-    email: string | null,
-    phone_number: string | null,
-    username: string,
-    password: string
-}
-
-export default async function authUser(column: string, value: string, password: string) {
+export default function authToken(token: string) {
     console.log(`[AUTH] Attemping to auth user`);
+
     try {
-        let user: IUser | undefined;
 
-        const badField = () => {
-            console.error("[AUTH] User not found");
-            return { auth: false, error: "user_not_found" }
+        if (!token) return { auth: false, message: 'No token provided.', token: undefined };
+
+        else if (!UserValidator.verifyToken(token)) {
+            return ({ auth: false, message: 'Failed to authenticate token.', token: undefined });
         }
 
-        if (!password) {
-            console.error("[AUTH] No password provided");
-            return { auth: false, error: "password_required" }
-        }
 
-        column === "email" ? user = await User.findOne({ email: value }) :
-            column === "phone_number" ? user = await User.findOne({ phone_number: value }) :
-                column === "username" ? user = await User.findOne({ username: value }) :
-                    badField();
+        console.log(`[AUTH] User authenticated`);
 
-        console.log("[AUTH] Database query successfull");
+        // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
+        console.log("[AUTH] Creating new token");
 
-        console.log(user);
+        const decodedToken = decode(token) as { id: string };
+        const id = decodedToken.id;
 
-        if (user) {
-            bcrypt.compare(password, user["password"], (err, result) => {
-                if (result && user) {
-                    return { auth: true, user_id: user["id"]}
-                }
-                else return { auth: false, error: "invalid_credentials" };
-            })
-        } else badField();
+        token = sign({ id: id }, String(process.env.ACCESSTOKENSECRET), { expiresIn: 60 });
+
+        return ({ auth: true, message: "User authenticated", token: token });
+
     } catch (error) {
-        console.error("[AUTH] Failed");
-        return {auth: false, error};
+        console.error("[USERCONTROLLER] Failed");
+        console.error(error);
+        return ({ auth: false, message: "Error", token: undefined });
+
     }
+
 }

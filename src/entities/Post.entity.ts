@@ -7,8 +7,8 @@ import { Like } from './Like.entity';
 @Entity()
 export class Post extends BaseEntity {
 
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryGeneratedColumn("uuid")
+    id: string;
 
     @Column("varchar", { length: 128 })
     img_url: string;

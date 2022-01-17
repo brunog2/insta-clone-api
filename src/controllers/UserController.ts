@@ -3,13 +3,14 @@ import bcrypt from 'bcrypt';
 import { sign, decode } from 'jsonwebtoken';
 import { User } from '../entities/User.entity';
 import UserValidator from '../util/validators/UserValidator';
+import authToken from '../services/auth';
 
 type userColumn = {
     [key: string]: 'full_name' | 'email' | 'phone_number' | 'username' | 'password'
 }
 
 interface IUser {
-    id: number,
+    id: string,
     full_name: string,
     email: string | null,
     phone_number: string | null,
@@ -30,7 +31,7 @@ class UserController {
 
             const posts = user?.posts;
 
-            return res.json({posts}).status(200);
+            return res.json({ posts }).status(200);
         } catch (error) {
             console.error("[USERCONTROLLER] Failed");
             res.status(400).send(error);
@@ -41,30 +42,16 @@ class UserController {
         console.log(`[USERCONTROLLER] Attemping to ${req.method} 'feed'`);
         try {
             let { token } = req.cookies;
-
+            const { id } = req.body;
             console.log(`[USERCONTROLLER] User coookies`, req.cookies);
 
-            if (!token) return res.status(401).json({ auth: false, message: 'No token provided.' });
+            const validToken = await authToken(token);
 
-            else if (!UserValidator.verifyToken(token)) {
-                return res.status(500).json({ auth: false, message: 'Failed to authenticate token.' });
-            }
+            console.log(validToken)
 
-            const decodedToken = decode(token) as { id: number };
-            const id = decodedToken.id;
+            return res.json(validToken)
 
-            console.log(`[USERCONTROLLER] User '${id}' authenticated`);
 
-            const user = await User.findOne({ id });
-            console.log(user);
-
-            // se tudo estiver ok gera um novo token e envia de volta pro usuário, salva no request para uso posterior
-            console.log("[USERCONTROLLER] Creating new token");
-
-            token = sign({ id: id }, String(process.env.ACCESSTOKENSECRET), { expiresIn: 60 });
-
-            // armazenar o hash do token no browser como um HttpOnly cookie
-            return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user }).status(200);
         } catch (error) {
             console.error("[USERCONTROLLER] Failed");
             res.status(400).send(error);
@@ -101,12 +88,15 @@ class UserController {
                 bcrypt.compare(password, user["password"], (err, result) => {
                     if (result && user) {
                         console.log("[USERCONTROLLER] Creating token");
-                        const token = sign({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                        
+                        let hashId = bcrypt.hashSync(user["id"].toString(), 10);
+
+                        const token = sign({ id: hashId }, String(process.env.ACCESSTOKENSECRET), {
                             expiresIn: 60 //s 
                         });
 
                         // armazenar o hash do token no browser como um HttpOnly cookie
-                        return res.cookie('token', token, { httpOnly: true }).json({ auth: true, accessToken: token, user: user }).status(200);
+                        return res.cookie('token', token, { httpOnly: true }).json({ auth: true, user_id: hashId }).status(200);
                     }
                     else return res.json({ error: "invalid_credentials" });
                 })
@@ -236,8 +226,14 @@ class UserController {
                 await user.save();
                 console.log("[USERCONTROLLER] Database query successfull");
 
+                let hashId;
+
+                bcrypt.hash(user["id"].toString(), 10, (err, hash) => {
+                    hashId = hash;
+                })
+
                 console.log("[USERCONTROLLER] Creating token");
-                const token = sign({ id: user["id"] }, String(process.env.ACCESSTOKENSECRET), {
+                const token = sign({ id: hashId }, String(process.env.ACCESSTOKENSECRET), {
                     expiresIn: 10 //s 
                 });
 

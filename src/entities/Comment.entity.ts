@@ -1,4 +1,5 @@
 import { BaseEntity, PrimaryGeneratedColumn, Column, Entity, OneToMany, ManyToOne } from 'typeorm';
+import { User } from './User.entity';
 import { Post } from './Post.entity';
 import { Like } from './Like.entity';
 
@@ -16,6 +17,9 @@ export class Comment extends BaseEntity {
 
     @ManyToOne(() => Post, post => post.comments)
     post: Post;
+    
+    @ManyToOne(() => User, user => user.posts)
+    user: User;
 
     // self relationship - a comment can have multiple child comments
     // the self comment

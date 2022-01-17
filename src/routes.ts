@@ -28,5 +28,6 @@ router.post('/users/update', userController.update);
 router.post('/post', postController.store);
 router.get('/post', postController.findAll);
 router.post('/posts/delete', postController.delete);
+router.post('/posts/update', postController.update);
 
 export default router;

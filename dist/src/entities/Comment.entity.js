@@ -12,6 +12,7 @@ var Comment_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Comment = void 0;
 const typeorm_1 = require("typeorm");
+const User_entity_1 = require("./User.entity");
 const Post_entity_1 = require("./Post.entity");
 const Like_entity_1 = require("./Like.entity");
 let Comment = Comment_1 = class Comment extends typeorm_1.BaseEntity {
@@ -32,6 +33,10 @@ __decorate([
     (0, typeorm_1.ManyToOne)(() => Post_entity_1.Post, post => post.comments),
     __metadata("design:type", Post_entity_1.Post)
 ], Comment.prototype, "post", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => User_entity_1.User, user => user.posts),
+    __metadata("design:type", User_entity_1.User)
+], Comment.prototype, "user", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(type => Comment_1, comment => comment.children),
     __metadata("design:type", Comment)
